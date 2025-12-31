@@ -1,0 +1,12 @@
+[Unit]
+Description=SNMP Traffic, Custom Collector Handler for Mackerel
+Documentation=https://github.com/mackerelio-labs/sabatrafficd
+After=network.target
+
+[Service]
+Type=notify-reload
+TimeoutStopSec=90
+ExecStart=/usr/bin/sabatrafficd -config /etc/sabatrafficd/sabatrafficd.yaml
+
+[Install]
+WantedBy=multi-user.target

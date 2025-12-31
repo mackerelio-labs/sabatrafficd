@@ -1,0 +1,49 @@
+builds:
+  - id: sabatrafficd
+    binary: sabatrafficd
+    main: ./cmd/sabatrafficd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - formats:
+      - zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - config.yaml.sample
+release:
+  github:
+nfpms:
+  - id: sabatrafficd
+    ids:
+      - sabatrafficd
+    description: SNMP Traffic, Custom Collector Handler for Mackerel
+    homepage: https://github.com/mackerelio-labs/sabatrafficd
+    license: ASL 2.0
+    maintainer: Hatena <mackerel-developers@hatena.ne.jp>
+    overrides:
+      # https://github.com/systemd/systemd/releases/tag/v253
+      # > A new service type Type=notify-reload is defined.
+      deb:
+        dependencies:
+          - libsystemd0 (>= 253)
+      rpm:
+        dependencies:
+          - systemd-libs >= 253
+    formats:
+      - rpm
+      - deb
+    package_name: sabatrafficd
+    contents:
+      - src: systemd/sabatrafficd.service
+        dst: /usr/lib/systemd/system/sabatrafficd.service
+      - src: config.yaml.sample
+        dst: /etc/sabatrafficd/sabatrafficd.yaml.sample
+    scripts:
+      postinstall: systemd/postinstall.sh
+      preremove: systemd/preremove.sh
+      postremove: systemd/postremove.sh

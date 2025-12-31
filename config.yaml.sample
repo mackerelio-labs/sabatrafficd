@@ -1,0 +1,19 @@
+x-api-key: xxxxx
+collector:
+- host-id: xxxxx
+  hostname: "" # display Name on Mackerel
+  community: public # the community string for device
+  host: 192.2.0.1 # ip address
+  interface:
+    include: "" # include interface name
+    exclude: "" # exclude interface name
+  mibs: # capture mib name
+    - ifHCInOctets
+    - ifHCOutOctets
+  skip-linkdown: true
+  custom-mibs:
+#   - display-name: uptime
+#     unit: integer
+#     mibs:
+#       - metric-name: uptime
+#         mib: 1.3.6.1.2.1.1.3.0

@@ -12,27 +12,27 @@ import (
 )
 
 type Converter struct {
-	prevSnapshot []collector.MetricsDutum
+	prevSnapshot  []collector.MetricsDutum
+	lastExecution time.Time
 }
 
 func NewConverter() *Converter {
 	return &Converter{}
 }
 
-func (c *Converter) Convert(rawMetrics []collector.MetricsDutum) []*mackerel.MetricValue {
+func (c *Converter) Convert(rawMetrics []collector.MetricsDutum, now time.Time) []*mackerel.MetricValue {
 	defer func() {
 		c.prevSnapshot = rawMetrics
+		c.lastExecution = now
 	}()
 
 	if len(c.prevSnapshot) == 0 {
 		return nil
 	}
-	return convert(rawMetrics, c.prevSnapshot)
+	return convert(rawMetrics, c.prevSnapshot, now, c.lastExecution)
 }
 
-func convert(rawMetrics, prevSnapshot []collector.MetricsDutum) []*mackerel.MetricValue {
-	now := time.Now().Unix()
-
+func convert(rawMetrics, prevSnapshot []collector.MetricsDutum, now, lastExecution time.Time) []*mackerel.MetricValue {
 	metrics := make([]*mackerel.MetricValue, 0)
 	for _, metric := range rawMetrics {
 		prevValue := metric.Value
@@ -59,13 +59,13 @@ func convert(rawMetrics, prevSnapshot []collector.MetricsDutum) []*mackerel.Metr
 				direction = "rxBytes"
 			}
 			name = fmt.Sprintf("interface.%s.%s.delta", ifName, direction)
-			value /= 60
+			value /= uint64(now.Sub(lastExecution).Seconds())
 		} else {
 			name = fmt.Sprintf("custom.interface.%s.%s", metric.Mib, ifName)
 		}
 		metrics = append(metrics, &mackerel.MetricValue{
 			Name:  name,
-			Time:  now,
+			Time:  now.Unix(),
 			Value: value,
 		})
 	}

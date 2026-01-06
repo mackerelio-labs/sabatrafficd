@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/mackerelio/mackerel-client-go"
 
@@ -19,7 +20,7 @@ type customConverter interface {
 	Convert(resp map[string]float64) []*mackerel.MetricValue
 }
 type converter interface {
-	Convert(rawMetrics []collector.MetricsDutum) []*mackerel.MetricValue
+	Convert(rawMetrics []collector.MetricsDutum, now time.Time) []*mackerel.MetricValue
 }
 
 type collectorIface interface {
@@ -51,11 +52,11 @@ func New(conf *config.CollectorConfig, q enqueuer) *Ticker {
 }
 
 func (t *Ticker) Tick(ctx context.Context) {
-	t.do(ctx)
+	t.do(ctx, time.Now())
 	t.doCustomMIBs(ctx)
 }
 
-func (t *Ticker) do(ctx context.Context) {
+func (t *Ticker) do(ctx context.Context, now time.Time) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	metrics, err := t.collector.Do(ctx)
@@ -63,7 +64,7 @@ func (t *Ticker) do(ctx context.Context) {
 		slog.WarnContext(ctx, "failed exec collector.Do()", slog.String("error", err.Error()))
 		return
 	}
-	if m := t.converter.Convert(metrics); m != nil {
+	if m := t.converter.Convert(metrics, now); m != nil {
 		t.queue.Enqueue(t.hostID, m)
 	}
 }

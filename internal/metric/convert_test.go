@@ -31,6 +31,8 @@ func TestCalcurateDiff(t *testing.T) {
 }
 
 func Test_convert(t *testing.T) {
+	now := time.Now()
+	lastExecution := now.Add(-time.Minute)
 	prevSnapshot := []collector.MetricsDutum{
 		{
 			IfIndex: 1,
@@ -71,7 +73,7 @@ func Test_convert(t *testing.T) {
 			IfName:  "eth0",
 			Value:   1,
 		},
-	}, prevSnapshot)
+	}, prevSnapshot, now, lastExecution)
 
 	expected := []*mackerel.MetricValue{
 		{
@@ -97,6 +99,9 @@ func Test_convert(t *testing.T) {
 }
 
 func Test_convert_scenario(t *testing.T) {
+	now := time.Now()
+	lastExecution := now.Add(-time.Minute)
+
 	tests := []struct {
 		input    []collector.MetricsDutum
 		expected []*mackerel.MetricValue
@@ -248,7 +253,7 @@ func Test_convert_scenario(t *testing.T) {
 		if i > 0 {
 			prevSnapshot = tests[i-1].input
 		}
-		actual := convert(tests[i].input, prevSnapshot)
+		actual := convert(tests[i].input, prevSnapshot, now, lastExecution)
 
 		if diff := cmp.Diff(actual, tests[i].expected); diff != "" {
 			t.Errorf("value is mismatch (-actual +expected):%s", diff)

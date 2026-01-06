@@ -20,6 +20,10 @@ func NewConverter() *Converter {
 	return &Converter{}
 }
 
+func (c *Converter) Reset() {
+	c.prevSnapshot = []collector.MetricsDutum{}
+}
+
 func (c *Converter) Convert(rawMetrics []collector.MetricsDutum, now time.Time) []*mackerel.MetricValue {
 	defer func() {
 		c.prevSnapshot = rawMetrics

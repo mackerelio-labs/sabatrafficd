@@ -21,6 +21,7 @@ type customConverter interface {
 }
 type converter interface {
 	Convert(rawMetrics []collector.MetricsDutum, now time.Time) []*mackerel.MetricValue
+	Reset()
 }
 
 type collectorIface interface {
@@ -62,6 +63,7 @@ func (t *Ticker) do(ctx context.Context, now time.Time) {
 	metrics, err := t.collector.Do(ctx)
 	if err != nil {
 		slog.WarnContext(ctx, "failed exec collector.Do()", slog.String("error", err.Error()))
+		t.converter.Reset()
 		return
 	}
 	if m := t.converter.Convert(metrics, now); m != nil {

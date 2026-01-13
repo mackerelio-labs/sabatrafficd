@@ -1,15 +1,19 @@
 x-api-key: xxxxx
 collector:
 - host-id: xxxxx
-  hostname: "" # display Name on Mackerel
+# hostname: "switch" # display Name on Mackerel
   community: public # the community string for device
   host: 192.2.0.1 # ip address
-  interface:
-    include: "" # include interface name
-    exclude: "" # exclude interface name
+# interface:
+#   include: ^(eth|wlan) # include interface name
+#   exclude: "" # exclude interface name
   mibs: # capture mib name
     - ifHCInOctets
     - ifHCOutOctets
+    - ifInDiscards
+    - ifOutDiscards
+    - ifInErrors
+    - ifOutErrors
   skip-linkdown: true
   custom-mibs:
 #   - display-name: uptime

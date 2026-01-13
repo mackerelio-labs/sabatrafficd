@@ -46,3 +46,7 @@ collector:
 #       - metric-name: uptime
 #         mib: 1.3.6.1.2.1.1.3.0
 ```
+
+- SNMP バージョンは SNMPv2c 固定です。
+- `host-id` は、[API](https://mackerel.io/ja/api-docs/)または、[mkr](https://github.com/mackerelio/mkr)で作成してください
+

@@ -24,6 +24,9 @@ type yamlCollectorConfig struct {
 	Host      string `yaml:"host"`
 	Port      uint16 `yaml:"port"`
 	Version   string `yaml:"version"`
+
+	SNMPv3 *yamlCollectorConfigSNMPv3 `yaml:"snmpv3"`
+
 	// for snmp/rule
 	Interface    *yamlInterface `yaml:"interface,omitempty"`
 	Mibs         []string       `yaml:"mibs,omitempty"`
@@ -63,6 +66,7 @@ type CollectorSNMPConfig struct {
 	Port uint16
 
 	V2c *collectorSNMPConfigV2c
+	V3  *collectorSNMPConfigV3
 }
 
 type CollectorConfig struct {
@@ -169,6 +173,28 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		}
 		snmpConfig.V2c = &collectorSNMPConfigV2c{
 			Community: t.Community,
+		}
+	}
+	if version == SNMPV3 {
+		if t.SNMPv3 == nil {
+			return nil, fmt.Errorf("snmpv3 not found")
+		}
+		if ok := parseSeurity(t.SNMPv3.SecLevel); !ok {
+			return nil, fmt.Errorf("snmpv3.security is invalid : %s", t.SNMPv3.SecLevel)
+		}
+		if ok := parseAuthenticationProtocol(t.SNMPv3.AuthenticationProtocol); !ok {
+			return nil, fmt.Errorf("snmpv3.auth-protocol is invalid : %s", t.SNMPv3.AuthenticationProtocol)
+		}
+		if ok := parsePrivacyProtocol(t.SNMPv3.PrivacyProtocol); !ok {
+			return nil, fmt.Errorf("snmpv3.priv-protocol is invalid : %s", t.SNMPv3.PrivacyProtocol)
+		}
+		snmpConfig.V3 = &collectorSNMPConfigV3{
+			secLevel:                 t.SNMPv3.SecLevel,
+			usename:                  t.SNMPv3.UserName,
+			authenticationProtocol:   t.SNMPv3.AuthenticationProtocol,
+			authenticationPassphrase: t.SNMPv3.AuthenticationPassphrase,
+			privacyProtocol:          t.SNMPv3.PrivacyProtocol,
+			privacyPassphrase:        t.SNMPv3.PrivacyPassphrase,
 		}
 	}
 

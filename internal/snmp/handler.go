@@ -22,19 +22,42 @@ type snmpHandler struct {
 }
 
 func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler, error) {
+	timeout := time.Duration(10) * time.Second
+	transport := "udp"
+	retries := 3
+
 	if param.V2c != nil {
 		return &snmpHandler{
 			gosnmp.GoSNMP{
 				Context:            ctx,
 				Target:             param.Host,
 				Port:               param.Port,
-				Transport:          "udp",
-				Community:          param.V2c.Community,
-				Version:            gosnmp.Version2c,
-				Timeout:            time.Duration(10) * time.Second,
-				Retries:            3,
+				Transport:          transport,
+				Timeout:            timeout,
+				Retries:            retries,
 				ExponentialTimeout: true,
 				MaxOids:            gosnmp.MaxOids,
+
+				Version:   gosnmp.Version2c,
+				Community: param.V2c.Community,
+			},
+		}, nil
+	} else if param.V3 != nil {
+		return &snmpHandler{
+			gosnmp.GoSNMP{
+				Context:            ctx,
+				Target:             param.Host,
+				Port:               param.Port,
+				Transport:          transport,
+				Timeout:            timeout,
+				Retries:            retries,
+				ExponentialTimeout: true,
+				MaxOids:            gosnmp.MaxOids,
+
+				Version:            gosnmp.Version3,
+				SecurityModel:      gosnmp.UserSecurityModel,
+				MsgFlags:           param.V3.MsgFlags(),
+				SecurityParameters: param.V3.SecurityParameters(),
 			},
 		}, nil
 	}

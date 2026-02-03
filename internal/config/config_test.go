@@ -466,6 +466,51 @@ func Test_convert(t *testing.T) {
 				},
 			},
 		},
+		{
+			source: yamlConfig{
+				ApiKey: "cat",
+				Collector: []*yamlCollectorConfig{
+					{
+						HostID:  "panda",
+						Version: "v3",
+						Host:    "192.0.2.1",
+						Port:    161,
+						SNMPv3: &yamlCollectorConfigSNMPv3{
+							SecLevel:                 "priv",
+							UserName:                 "user",
+							AuthenticationProtocol:   "sha",
+							AuthenticationPassphrase: "auth-password",
+							PrivacyProtocol:          "aes",
+							PrivacyPassphrase:        "priv-password",
+						},
+					},
+				},
+			},
+			expected: &Config{
+				ApiKey: "cat",
+				Collector: []*CollectorConfig{
+					{
+						HostID: "panda",
+
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V3: &collectorSNMPConfigV3{
+								secLevel:                 "priv",
+								usename:                  "user",
+								authenticationProtocol:   "sha",
+								authenticationPassphrase: "auth-password",
+								privacyProtocol:          "aes",
+								privacyPassphrase:        "priv-password",
+							},
+						},
+
+						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
+						CustomMIBmetricNameMappedMIBs: map[string]string{},
+					},
+				},
+			},
+		},
 	}
 
 	opt1 := cmpopts.SortSlices(func(i, j string) bool { return i < j })
@@ -478,13 +523,15 @@ func Test_convert(t *testing.T) {
 		return fmt.Sprint(x) == fmt.Sprint(y)
 	})
 
+	opt3 := cmp.AllowUnexported(collectorSNMPConfigV3{})
+
 	for _, tc := range tests {
 		actual, err := convert(tc.source)
 		if (err != nil) != tc.wantErr {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff(actual, tc.expected, opt1, opt2); diff != "" {
+		if diff := cmp.Diff(actual, tc.expected, opt1, opt2, opt3); diff != "" {
 			t.Errorf("value is mismatch (-actual +expected):%s", diff)
 		}
 	}

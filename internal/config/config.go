@@ -131,6 +131,7 @@ func convert(t yamlConfig) (*Config, error) {
 
 const (
 	SNMPV2c = "SNMPv2c"
+	SNMPV3  = "SNMPv3"
 )
 
 func snmpProtocolVersion(v string) (string, error) {
@@ -139,8 +140,10 @@ func snmpProtocolVersion(v string) (string, error) {
 		return SNMPV2c, nil
 	case "v2c":
 		return SNMPV2c, nil
+	case "v3":
+		return SNMPV3, nil
 	}
-	return "", fmt.Errorf("invalid snmp protocol version (v2c) : %s", v)
+	return "", fmt.Errorf("invalid snmp protocol version (v2c, v3) : %s", v)
 }
 
 func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {

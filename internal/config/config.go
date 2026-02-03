@@ -128,6 +128,20 @@ func convert(t yamlConfig) (*Config, error) {
 	}, nil
 }
 
+const (
+	SNMPV2c = "SNMPv2c"
+)
+
+func snmpProtocolVersion(v string) (string, error) {
+	switch v {
+	case "":
+		return SNMPV2c, nil
+	case "v2c":
+		return SNMPV2c, nil
+	}
+	return "", fmt.Errorf("invalid snmp protocol version (v2c) : %s", v)
+}
+
 func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 	if t.Community == "" {
 		return nil, fmt.Errorf("community is needed")

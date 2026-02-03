@@ -455,3 +455,41 @@ func Test_convert(t *testing.T) {
 		}
 	}
 }
+
+func Test_snmpProtocolVersion(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+		wantErr  bool
+	}{
+		{
+			input:    "",
+			expected: SNMPV2c,
+			wantErr:  false,
+		},
+		{
+			input:    "v1",
+			expected: "",
+			wantErr:  true,
+		},
+		{
+			input:    "v2c",
+			expected: SNMPV2c,
+			wantErr:  false,
+		},
+		{
+			input:    "foo",
+			expected: "",
+			wantErr:  true,
+		},
+	}
+	for _, tc := range tests {
+		actual, err := snmpProtocolVersion(tc.input)
+		if (err != nil) != tc.wantErr {
+			t.Error(err)
+		}
+		if actual != tc.expected {
+			t.Errorf("invalid actual: %s, expected: %s", actual, tc.expected)
+		}
+	}
+}

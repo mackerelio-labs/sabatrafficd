@@ -23,6 +23,7 @@ type yamlCollectorConfig struct {
 	Community string `yaml:"community"`
 	Host      string `yaml:"host"`
 	Port      uint16 `yaml:"port"`
+	Version   string `yaml:"version"`
 	// for snmp/rule
 	Interface    *yamlInterface `yaml:"interface,omitempty"`
 	Mibs         []string       `yaml:"mibs,omitempty"`
@@ -153,22 +154,31 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		return nil, fmt.Errorf("host-id is needed")
 	}
 
+	snmpConfig := CollectorSNMPConfig{
+		Host: t.Host,
+		Port: cmp.Or(t.Port, 161),
+	}
+
+	version, err := snmpProtocolVersion(t.Version)
+	if err != nil {
+		return nil, err
+	}
+	if version == SNMPV2c {
+		snmpConfig.V2c = &collectorSNMPConfigV2c{
+			Community: t.Community,
+		}
+	}
+
 	c := &CollectorConfig{
 		HostID:   t.HostID,
 		HostName: t.HostName,
 
-		SNMP: CollectorSNMPConfig{
-			Host: t.Host,
-			Port: cmp.Or(t.Port, 161),
-			V2c: &collectorSNMPConfigV2c{
-				Community: t.Community,
-			},
-		},
+		SNMP: snmpConfig,
+
 		SkipDownLinkState:             t.SkipLinkdown,
 		CustomMIBmetricNameMappedMIBs: map[string]string{},
 	}
 
-	var err error
 	if t.Interface != nil {
 		if t.Interface.Include != nil && t.Interface.Exclude != nil {
 			return nil, fmt.Errorf("Interface.Exclude, Interface.Include is exclusive control")

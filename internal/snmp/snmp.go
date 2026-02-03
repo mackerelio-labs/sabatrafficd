@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/gosnmp/gosnmp"
+	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 )
 
 const (
@@ -43,11 +44,11 @@ type SNMP struct {
 	lockName string
 }
 
-func Connect(ctx context.Context, target string, port uint16, community string) (*SNMP, error) {
-	lockName := net.JoinHostPort(target, fmt.Sprint(port))
+func Connect(ctx context.Context, param config.CollectorSNMPConfig) (*SNMP, error) {
+	lockName := net.JoinHostPort(param.Host, fmt.Sprint(param.Port))
 	lock(lockName)
 
-	g := NewHandler(ctx, target, port, community)
+	g := NewHandler(ctx, param)
 	if err := g.Connect(); err != nil {
 		return nil, err
 	}

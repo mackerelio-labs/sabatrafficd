@@ -19,10 +19,11 @@ type yamlCollectorConfig struct {
 	HostID   string `yaml:"host-id"`
 	HostName string `yaml:"hostname,omitempty"`
 
-	// for snmp
-	Community    string         `yaml:"community"`
-	Host         string         `yaml:"host"`
-	Port         uint16         `yaml:"port"`
+	// for snmp/conn
+	Community string `yaml:"community"`
+	Host      string `yaml:"host"`
+	Port      uint16 `yaml:"port"`
+	// for snmp/rule
 	Interface    *yamlInterface `yaml:"interface,omitempty"`
 	Mibs         []string       `yaml:"mibs,omitempty"`
 	SkipLinkdown bool           `yaml:"skip-linkdown,omitempty"`
@@ -52,14 +53,20 @@ type mibWithDisplayName struct {
 	MIB         string `yaml:"mib"`
 }
 
+type CollectorSNMPConfig struct {
+	Community string
+	Host      string
+	Port      uint16
+}
+
 type CollectorConfig struct {
 	HostID   string
 	HostName string
 
-	// for snmp
-	Community         string
-	Host              string
-	Port              uint16
+	// for snmp/conn
+	SNMP CollectorSNMPConfig
+
+	// for snmp/rule
 	MIBs              []string
 	IncludeRegexp     *regexp.Regexp
 	ExcludeRegexp     *regexp.Regexp
@@ -72,7 +79,7 @@ type CollectorConfig struct {
 }
 
 func (conf *CollectorConfig) CollectorID() string {
-	return fmt.Sprintf("host=%s,port=%d,hostID=%s", conf.Host, conf.Port, conf.HostID)
+	return fmt.Sprintf("host=%s,port=%d,hostID=%s", conf.SNMP.Host, conf.SNMP.Port, conf.HostID)
 }
 
 type Config struct {
@@ -131,9 +138,11 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		HostID:   t.HostID,
 		HostName: t.HostName,
 
-		Community:                     t.Community,
-		Host:                          t.Host,
-		Port:                          cmp.Or(t.Port, 161),
+		SNMP: CollectorSNMPConfig{
+			Community: t.Community,
+			Host:      t.Host,
+			Port:      cmp.Or(t.Port, 161),
+		},
 		SkipDownLinkState:             t.SkipLinkdown,
 		CustomMIBmetricNameMappedMIBs: map[string]string{},
 	}

@@ -190,9 +190,12 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      161,
+						},
+
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 					},
@@ -218,9 +221,11 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      161,
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 					},
@@ -249,9 +254,11 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      161,
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 						IncludeRegexp:                 regexp.MustCompile(reg),
@@ -281,9 +288,11 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      161,
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 						ExcludeRegexp:                 regexp.MustCompile(reg),
@@ -337,9 +346,11 @@ func Test_convert(t *testing.T) {
 				ApiKey: "cat",
 				Collector: []*CollectorConfig{
 					{
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      161,
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 
@@ -382,10 +393,12 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community: "public",
-						Host:      "192.0.2.1",
-						Port:      10161,
-						MIBs:      []string{"ifHCInOctets", "ifHCOutOctets"},
+						SNMP: CollectorSNMPConfig{
+							Community: "public",
+							Host:      "192.0.2.1",
+							Port:      10161,
+						},
+						MIBs: []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{
 							"custom.custommibs.d2cbe65f53da8607e64173c1a83394fe.foo.bar": "1.2.34.56",
 						},

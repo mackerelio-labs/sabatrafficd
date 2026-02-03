@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gosnmp/gosnmp"
+	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 )
 
 type Handler interface {
@@ -19,14 +20,14 @@ type snmpHandler struct {
 	gosnmp.GoSNMP
 }
 
-func NewHandler(ctx context.Context, target string, port uint16, community string) Handler {
+func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) Handler {
 	return &snmpHandler{
 		gosnmp.GoSNMP{
 			Context:            ctx,
-			Target:             target,
-			Port:               port,
+			Target:             param.Host,
+			Port:               param.Port,
 			Transport:          "udp",
-			Community:          community,
+			Community:          param.Community,
 			Version:            gosnmp.Version2c,
 			Timeout:            time.Duration(10) * time.Second,
 			Retries:            3,

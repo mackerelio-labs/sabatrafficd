@@ -121,7 +121,7 @@ func convert(t yamlConfig) (*Config, error) {
 	for i := range t.Collector {
 		conf, err := convertCollector(t.Collector[i])
 		if err != nil {
-			slog.Warn("skipped because failed parse config", slog.Int("index", i))
+			slog.Warn("skipped because failed parse config", slog.Int("index", i), slog.String("error", err.Error()))
 			continue
 		}
 		cs = append(cs, conf)

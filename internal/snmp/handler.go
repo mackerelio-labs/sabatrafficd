@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gosnmp/gosnmp"
@@ -20,21 +21,25 @@ type snmpHandler struct {
 	gosnmp.GoSNMP
 }
 
-func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) Handler {
-	return &snmpHandler{
-		gosnmp.GoSNMP{
-			Context:            ctx,
-			Target:             param.Host,
-			Port:               param.Port,
-			Transport:          "udp",
-			Community:          param.V2c.Community,
-			Version:            gosnmp.Version2c,
-			Timeout:            time.Duration(10) * time.Second,
-			Retries:            3,
-			ExponentialTimeout: true,
-			MaxOids:            gosnmp.MaxOids,
-		},
+func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler, error) {
+	if param.V2c != nil {
+		return &snmpHandler{
+			gosnmp.GoSNMP{
+				Context:            ctx,
+				Target:             param.Host,
+				Port:               param.Port,
+				Transport:          "udp",
+				Community:          param.V2c.Community,
+				Version:            gosnmp.Version2c,
+				Timeout:            time.Duration(10) * time.Second,
+				Retries:            3,
+				ExponentialTimeout: true,
+				MaxOids:            gosnmp.MaxOids,
+			},
+		}, nil
 	}
+
+	return nil, fmt.Errorf("invalid params")
 }
 
 func (x *snmpHandler) Close() error {

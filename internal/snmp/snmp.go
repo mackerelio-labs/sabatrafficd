@@ -48,7 +48,11 @@ func Connect(ctx context.Context, param config.CollectorSNMPConfig) (*SNMP, erro
 	lockName := net.JoinHostPort(param.Host, fmt.Sprint(param.Port))
 	lock(lockName)
 
-	g := NewHandler(ctx, param)
+	g, err := NewHandler(ctx, param)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := g.Connect(); err != nil {
 		return nil, err
 	}

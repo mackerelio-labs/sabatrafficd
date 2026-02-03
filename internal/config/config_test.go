@@ -191,9 +191,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      161,
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
@@ -222,9 +224,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      161,
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
@@ -255,9 +259,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      161,
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
@@ -289,9 +295,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      161,
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
@@ -347,9 +355,11 @@ func Test_convert(t *testing.T) {
 				Collector: []*CollectorConfig{
 					{
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      161,
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
@@ -394,9 +404,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Community: "public",
-							Host:      "192.0.2.1",
-							Port:      10161,
+							Host: "192.0.2.1",
+							Port: 10161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
 						},
 						MIBs: []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{

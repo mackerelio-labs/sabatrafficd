@@ -27,7 +27,7 @@ func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) Handler {
 			Target:             param.Host,
 			Port:               param.Port,
 			Transport:          "udp",
-			Community:          param.Community,
+			Community:          param.V2c.Community,
 			Version:            gosnmp.Version2c,
 			Timeout:            time.Duration(10) * time.Second,
 			Retries:            3,

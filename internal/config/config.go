@@ -53,10 +53,15 @@ type mibWithDisplayName struct {
 	MIB         string `yaml:"mib"`
 }
 
-type CollectorSNMPConfig struct {
+type collectorSNMPConfigV2c struct {
 	Community string
-	Host      string
-	Port      uint16
+}
+
+type CollectorSNMPConfig struct {
+	Host string
+	Port uint16
+
+	V2c *collectorSNMPConfigV2c
 }
 
 type CollectorConfig struct {
@@ -139,9 +144,11 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		HostName: t.HostName,
 
 		SNMP: CollectorSNMPConfig{
-			Community: t.Community,
-			Host:      t.Host,
-			Port:      cmp.Or(t.Port, 161),
+			Host: t.Host,
+			Port: cmp.Or(t.Port, 161),
+			V2c: &collectorSNMPConfigV2c{
+				Community: t.Community,
+			},
 		},
 		SkipDownLinkState:             t.SkipLinkdown,
 		CustomMIBmetricNameMappedMIBs: map[string]string{},

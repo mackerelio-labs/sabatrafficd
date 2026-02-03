@@ -147,9 +147,6 @@ func snmpProtocolVersion(v string) (string, error) {
 }
 
 func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
-	if t.Community == "" {
-		return nil, fmt.Errorf("community is needed")
-	}
 	if t.Host == "" {
 		return nil, fmt.Errorf("host is needed")
 	}
@@ -167,6 +164,9 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		return nil, err
 	}
 	if version == SNMPV2c {
+		if t.Community == "" {
+			return nil, fmt.Errorf("community is needed")
+		}
 		snmpConfig.V2c = &collectorSNMPConfigV2c{
 			Community: t.Community,
 		}

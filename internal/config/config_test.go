@@ -176,6 +176,40 @@ func Test_convert(t *testing.T) {
 				ApiKey: "cat",
 				Collector: []*yamlCollectorConfig{
 					{
+						HostID:  "panda",
+						Version: "v2c",
+
+						Community: "public",
+						Host:      "192.0.2.1",
+						Port:      161,
+					},
+				},
+			},
+			expected: &Config{
+				ApiKey: "cat",
+				Collector: []*CollectorConfig{
+					{
+						HostID: "panda",
+
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
+
+						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
+						CustomMIBmetricNameMappedMIBs: map[string]string{},
+					},
+				},
+			},
+		},
+		{
+			source: yamlConfig{
+				ApiKey: "cat",
+				Collector: []*yamlCollectorConfig{
+					{
 						HostID: "panda",
 
 						Community: "public",
@@ -190,9 +224,14 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
+
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 					},
@@ -218,9 +257,13 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 					},
@@ -249,9 +292,13 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 						IncludeRegexp:                 regexp.MustCompile(reg),
@@ -281,9 +328,13 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 						ExcludeRegexp:                 regexp.MustCompile(reg),
@@ -337,9 +388,13 @@ func Test_convert(t *testing.T) {
 				ApiKey: "cat",
 				Collector: []*CollectorConfig{
 					{
-						Community:                     "public",
-						Host:                          "192.0.2.1",
-						Port:                          161,
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
 						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{},
 
@@ -382,10 +437,14 @@ func Test_convert(t *testing.T) {
 					{
 						HostID: "panda",
 
-						Community: "public",
-						Host:      "192.0.2.1",
-						Port:      10161,
-						MIBs:      []string{"ifHCInOctets", "ifHCOutOctets"},
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 10161,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
+						MIBs: []string{"ifHCInOctets", "ifHCOutOctets"},
 						CustomMIBmetricNameMappedMIBs: map[string]string{
 							"custom.custommibs.d2cbe65f53da8607e64173c1a83394fe.foo.bar": "1.2.34.56",
 						},
@@ -407,6 +466,51 @@ func Test_convert(t *testing.T) {
 				},
 			},
 		},
+		{
+			source: yamlConfig{
+				ApiKey: "cat",
+				Collector: []*yamlCollectorConfig{
+					{
+						HostID:  "panda",
+						Version: "v3",
+						Host:    "192.0.2.1",
+						Port:    161,
+						SNMPv3: &yamlCollectorConfigSNMPv3{
+							SecLevel:                 "priv",
+							UserName:                 "user",
+							AuthenticationProtocol:   "sha",
+							AuthenticationPassphrase: "auth-password",
+							PrivacyProtocol:          "aes",
+							PrivacyPassphrase:        "priv-password",
+						},
+					},
+				},
+			},
+			expected: &Config{
+				ApiKey: "cat",
+				Collector: []*CollectorConfig{
+					{
+						HostID: "panda",
+
+						SNMP: CollectorSNMPConfig{
+							Host: "192.0.2.1",
+							Port: 161,
+							V3: &collectorSNMPConfigV3{
+								secLevel:                 "priv",
+								usename:                  "user",
+								authenticationProtocol:   "sha",
+								authenticationPassphrase: "auth-password",
+								privacyProtocol:          "aes",
+								privacyPassphrase:        "priv-password",
+							},
+						},
+
+						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
+						CustomMIBmetricNameMappedMIBs: map[string]string{},
+					},
+				},
+			},
+		},
 	}
 
 	opt1 := cmpopts.SortSlices(func(i, j string) bool { return i < j })
@@ -419,14 +523,59 @@ func Test_convert(t *testing.T) {
 		return fmt.Sprint(x) == fmt.Sprint(y)
 	})
 
+	opt3 := cmp.AllowUnexported(collectorSNMPConfigV3{})
+
 	for _, tc := range tests {
 		actual, err := convert(tc.source)
 		if (err != nil) != tc.wantErr {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff(actual, tc.expected, opt1, opt2); diff != "" {
+		if diff := cmp.Diff(actual, tc.expected, opt1, opt2, opt3); diff != "" {
 			t.Errorf("value is mismatch (-actual +expected):%s", diff)
+		}
+	}
+}
+
+func Test_snmpProtocolVersion(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+		wantErr  bool
+	}{
+		{
+			input:    "",
+			expected: SNMPV2c,
+			wantErr:  false,
+		},
+		{
+			input:    "v1",
+			expected: "",
+			wantErr:  true,
+		},
+		{
+			input:    "v2c",
+			expected: SNMPV2c,
+			wantErr:  false,
+		},
+		{
+			input:    "v3",
+			expected: SNMPV3,
+			wantErr:  false,
+		},
+		{
+			input:    "foo",
+			expected: "",
+			wantErr:  true,
+		},
+	}
+	for _, tc := range tests {
+		actual, err := snmpProtocolVersion(tc.input)
+		if (err != nil) != tc.wantErr {
+			t.Error(err)
+		}
+		if actual != tc.expected {
+			t.Errorf("invalid actual: %s, expected: %s", actual, tc.expected)
 		}
 	}
 }

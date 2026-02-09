@@ -28,7 +28,7 @@ func New(conf *config.CollectorConfig) *collector {
 }
 
 func (c *collector) Do(ctx context.Context) ([]MetricsDutum, error) {
-	client, err := snmp.Connect(ctx, c.conf.Host, c.conf.Port, c.conf.Community)
+	client, err := snmp.Connect(ctx, c.conf.SNMP)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func do(_ context.Context, client snmpClient, conf *config.CollectorConfig) ([]M
 }
 
 func (c *collector) DoInterfaceIPAddress(ctx context.Context) ([]Interface, error) {
-	client, err := snmp.Connect(ctx, c.conf.Host, c.conf.Port, c.conf.Community)
+	client, err := snmp.Connect(ctx, c.conf.SNMP)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func doInterfaceIPAddress(_ context.Context, client snmpClient, _ *config.Collec
 
 // mib:value
 func (c *collector) DoCustomMIBs(ctx context.Context) (map[string]float64, error) {
-	client, err := snmp.Connect(ctx, c.conf.Host, c.conf.Port, c.conf.Community)
+	client, err := snmp.Connect(ctx, c.conf.SNMP)
 	if err != nil {
 		return nil, err
 	}

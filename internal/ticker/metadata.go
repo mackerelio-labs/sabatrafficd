@@ -46,7 +46,7 @@ func (t *MetadataTicker) Tick(ctx context.Context) {
 	}
 	t.interfaces = interfaces
 
-	if err := t.client.UpdateHost(ctx, t.conf.HostID, t.conf.Host, cmp.Or(t.conf.HostName, t.conf.Host), interfaces); err != nil {
+	if err := t.client.UpdateHost(ctx, t.conf.HostID, t.conf.SNMP.Host, cmp.Or(t.conf.HostName, t.conf.SNMP.Host), interfaces); err != nil {
 		slog.WarnContext(ctx, "failed UpdateHost", slog.String("error", err.Error()))
 	}
 }

@@ -19,10 +19,15 @@ type yamlCollectorConfig struct {
 	HostID   string `yaml:"host-id"`
 	HostName string `yaml:"hostname,omitempty"`
 
-	// for snmp
-	Community    string         `yaml:"community"`
-	Host         string         `yaml:"host"`
-	Port         uint16         `yaml:"port"`
+	// for snmp/conn
+	Community string `yaml:"community"`
+	Host      string `yaml:"host"`
+	Port      uint16 `yaml:"port"`
+	Version   string `yaml:"version"`
+
+	SNMPv3 *yamlCollectorConfigSNMPv3 `yaml:"snmpv3"`
+
+	// for snmp/rule
 	Interface    *yamlInterface `yaml:"interface,omitempty"`
 	Mibs         []string       `yaml:"mibs,omitempty"`
 	SkipLinkdown bool           `yaml:"skip-linkdown,omitempty"`
@@ -52,14 +57,26 @@ type mibWithDisplayName struct {
 	MIB         string `yaml:"mib"`
 }
 
+type collectorSNMPConfigV2c struct {
+	Community string
+}
+
+type CollectorSNMPConfig struct {
+	Host string
+	Port uint16
+
+	V2c *collectorSNMPConfigV2c
+	V3  *collectorSNMPConfigV3
+}
+
 type CollectorConfig struct {
 	HostID   string
 	HostName string
 
-	// for snmp
-	Community         string
-	Host              string
-	Port              uint16
+	// for snmp/conn
+	SNMP CollectorSNMPConfig
+
+	// for snmp/rule
 	MIBs              []string
 	IncludeRegexp     *regexp.Regexp
 	ExcludeRegexp     *regexp.Regexp
@@ -72,7 +89,7 @@ type CollectorConfig struct {
 }
 
 func (conf *CollectorConfig) CollectorID() string {
-	return fmt.Sprintf("host=%s,port=%d,hostID=%s", conf.Host, conf.Port, conf.HostID)
+	return fmt.Sprintf("host=%s,port=%d,hostID=%s", conf.SNMP.Host, conf.SNMP.Port, conf.HostID)
 }
 
 type Config struct {
@@ -104,7 +121,7 @@ func convert(t yamlConfig) (*Config, error) {
 	for i := range t.Collector {
 		conf, err := convertCollector(t.Collector[i])
 		if err != nil {
-			slog.Warn("skipped because failed parse config", slog.Int("index", i))
+			slog.Warn("skipped because failed parse config", slog.Int("index", i), slog.String("error", err.Error()))
 			continue
 		}
 		cs = append(cs, conf)
@@ -116,10 +133,24 @@ func convert(t yamlConfig) (*Config, error) {
 	}, nil
 }
 
-func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
-	if t.Community == "" {
-		return nil, fmt.Errorf("community is needed")
+const (
+	SNMPV2c = "SNMPv2c"
+	SNMPV3  = "SNMPv3"
+)
+
+func snmpProtocolVersion(v string) (string, error) {
+	switch v {
+	case "":
+		return SNMPV2c, nil
+	case "v2c":
+		return SNMPV2c, nil
+	case "v3":
+		return SNMPV3, nil
 	}
+	return "", fmt.Errorf("invalid snmp protocol version (v2c, v3) : %s", v)
+}
+
+func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 	if t.Host == "" {
 		return nil, fmt.Errorf("host is needed")
 	}
@@ -127,18 +158,56 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		return nil, fmt.Errorf("host-id is needed")
 	}
 
+	snmpConfig := CollectorSNMPConfig{
+		Host: t.Host,
+		Port: cmp.Or(t.Port, 161),
+	}
+
+	version, err := snmpProtocolVersion(t.Version)
+	if err != nil {
+		return nil, err
+	}
+	if version == SNMPV2c {
+		if t.Community == "" {
+			return nil, fmt.Errorf("community is needed")
+		}
+		snmpConfig.V2c = &collectorSNMPConfigV2c{
+			Community: t.Community,
+		}
+	}
+	if version == SNMPV3 {
+		if t.SNMPv3 == nil {
+			return nil, fmt.Errorf("snmpv3 not found")
+		}
+		if ok := parseSeurity(t.SNMPv3.SecLevel); !ok {
+			return nil, fmt.Errorf("snmpv3.security is invalid : %s", t.SNMPv3.SecLevel)
+		}
+		if ok := parseAuthenticationProtocol(t.SNMPv3.AuthenticationProtocol); !ok {
+			return nil, fmt.Errorf("snmpv3.auth-protocol is invalid : %s", t.SNMPv3.AuthenticationProtocol)
+		}
+		if ok := parsePrivacyProtocol(t.SNMPv3.PrivacyProtocol); !ok {
+			return nil, fmt.Errorf("snmpv3.priv-protocol is invalid : %s", t.SNMPv3.PrivacyProtocol)
+		}
+		snmpConfig.V3 = &collectorSNMPConfigV3{
+			secLevel:                 t.SNMPv3.SecLevel,
+			usename:                  t.SNMPv3.UserName,
+			authenticationProtocol:   t.SNMPv3.AuthenticationProtocol,
+			authenticationPassphrase: t.SNMPv3.AuthenticationPassphrase,
+			privacyProtocol:          t.SNMPv3.PrivacyProtocol,
+			privacyPassphrase:        t.SNMPv3.PrivacyPassphrase,
+		}
+	}
+
 	c := &CollectorConfig{
 		HostID:   t.HostID,
 		HostName: t.HostName,
 
-		Community:                     t.Community,
-		Host:                          t.Host,
-		Port:                          cmp.Or(t.Port, 161),
+		SNMP: snmpConfig,
+
 		SkipDownLinkState:             t.SkipLinkdown,
 		CustomMIBmetricNameMappedMIBs: map[string]string{},
 	}
 
-	var err error
 	if t.Interface != nil {
 		if t.Interface.Include != nil && t.Interface.Exclude != nil {
 			return nil, fmt.Errorf("Interface.Exclude, Interface.Include is exclusive control")

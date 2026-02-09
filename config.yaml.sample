@@ -4,6 +4,7 @@ collector:
 # hostname: "switch" # display Name on Mackerel
   community: public # the community string for device
   host: 192.2.0.1 # ip address
+# version: v2c # v2c or v3
 # interface:
 #   include: ^(eth|wlan) # include interface name
 #   exclude: "" # exclude interface name
@@ -15,6 +16,13 @@ collector:
     - ifInErrors
     - ifOutErrors
   skip-linkdown: true
+# snmpv3:
+#   security: auth # auth, priv, noauth
+#   username: ....
+#   auth-protocol: noauth # noauth, md5, sha, sha224, sha256, sha384, sha512
+#   auth-password: ....
+#   priv-protocol: nopriv # nopriv, des, aes, aes192, aes256
+#   priv-password: ....
   custom-mibs:
 #   - display-name: uptime
 #     unit: integer

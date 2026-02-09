@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -192,8 +193,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -225,8 +228,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -258,8 +263,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -293,8 +300,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -329,8 +338,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -389,8 +400,10 @@ func Test_convert(t *testing.T) {
 				Collector: []*CollectorConfig{
 					{
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -438,8 +451,10 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 10161,
+							Host:    "192.0.2.1",
+							Port:    10161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
 							V2c: &collectorSNMPConfigV2c{
 								Community: "public",
 							},
@@ -493,8 +508,11 @@ func Test_convert(t *testing.T) {
 						HostID: "panda",
 
 						SNMP: CollectorSNMPConfig{
-							Host: "192.0.2.1",
-							Port: 161,
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
+
 							V3: &collectorSNMPConfigV3{
 								secLevel:                 "priv",
 								usename:                  "user",

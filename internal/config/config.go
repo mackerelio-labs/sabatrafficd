@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"slices"
+	"time"
 
 	"github.com/mackerelio/mackerel-client-go"
 	"gopkg.in/yaml.v3"
@@ -24,6 +25,8 @@ type yamlCollectorConfig struct {
 	Host      string `yaml:"host"`
 	Port      uint16 `yaml:"port"`
 	Version   string `yaml:"version"`
+	Timeout   string `yaml:"timeout"`
+	Retry     int    `yaml:"retry"`
 
 	SNMPv3 *yamlCollectorConfigSNMPv3 `yaml:"snmpv3"`
 
@@ -62,8 +65,10 @@ type collectorSNMPConfigV2c struct {
 }
 
 type CollectorSNMPConfig struct {
-	Host string
-	Port uint16
+	Host    string
+	Port    uint16
+	Timeout time.Duration
+	Retry   int
 
 	V2c *collectorSNMPConfigV2c
 	V3  *collectorSNMPConfigV3
@@ -158,9 +163,16 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 		return nil, fmt.Errorf("host-id is needed")
 	}
 
+	timeout, err := time.ParseDuration(cmp.Or(t.Timeout, "10s"))
+	if err != nil {
+		return nil, err
+	}
+
 	snmpConfig := CollectorSNMPConfig{
-		Host: t.Host,
-		Port: cmp.Or(t.Port, 161),
+		Host:    t.Host,
+		Port:    cmp.Or(t.Port, 161),
+		Timeout: timeout,
+		Retry:   cmp.Or(t.Retry, 3),
 	}
 
 	version, err := snmpProtocolVersion(t.Version)

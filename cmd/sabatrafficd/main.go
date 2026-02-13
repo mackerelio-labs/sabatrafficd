@@ -53,6 +53,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	slog.Info("initialize...")
+
 	client = mackerel.New(conf.ApiKey)
 	queueHandler = sendqueue.New(client)
 
@@ -74,6 +76,42 @@ func main() {
 	trapSignalInterrupt()
 	trapSignals()
 
+	runServe()
+
+	slog.Info("initialized.")
+	<-idleShutdown
+}
+
+func runServe() {
+	var (
+		limit       = 55 * time.Second
+		maxInterval = 300 * time.Millisecond
+		minInterval = 30 * time.Millisecond
+
+		wait time.Duration
+
+		multiple  = 1
+		remainder = 0
+
+		srvsNum = len(srvs)
+	)
+
+	// limit 以内に全ての処理が起動状態となることを期待する
+	// 負荷分散のため、待ち時間を計算
+	// このアプリケーションの以後の負荷は、この limit 時間に起因した偏りが発生する
+	wait = limit / time.Duration(srvsNum)
+	if maxInterval < wait {
+		wait = maxInterval
+	} else if wait < minInterval {
+		// minInterval 以下の待ち時間となった場合、待ち時間を minInterval で切り上げ
+		// 複数の起動を行い、wait時間Sleepさせる
+		wait = minInterval
+		num := int64(limit) / int64(minInterval)
+		multiple = srvsNum / int(num)
+		remainder = srvsNum % int(num)
+	}
+
+	var current int
 	for _, s := range srvs {
 		go func(s serveAndShutdown) {
 			if err := s.Serve(); err != nil {
@@ -81,11 +119,21 @@ func main() {
 				os.Exit(1)
 			}
 		}(s)
-		time.Sleep(300 * time.Millisecond)
-	}
 
-	slog.Info("initialized.")
-	<-idleShutdown
+		// 規定数起動したかをチェック
+		base := multiple
+		if remainder > 0 {
+			base++
+		}
+		current++
+		if base == current {
+			if remainder > 0 {
+				remainder--
+			}
+			time.Sleep(wait)
+			current = 0
+		}
+	}
 }
 
 func trapSignalInterrupt() {

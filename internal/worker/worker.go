@@ -53,10 +53,9 @@ func (w *worker) Serve() error {
 		slog.Debug("Serve stopped")
 	}()
 
+	w.wg.Add(1)
+	defer w.wg.Done()
 	for {
-		w.wg.Add(1)
-		defer w.wg.Done()
-
 		w.tick.Tick(ctx)
 
 		select {

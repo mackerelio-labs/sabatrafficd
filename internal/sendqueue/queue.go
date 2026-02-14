@@ -71,10 +71,10 @@ func (q *Queue) Serve() error {
 		slog.Debug("Serve stopped")
 	}()
 
-	for {
-		q.wg.Add(1)
-		defer q.wg.Done()
 
+	q.wg.Add(1)
+	defer q.wg.Done()
+	for {
 		select {
 		case <-quit:
 			return nil

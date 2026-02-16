@@ -1,10 +1,8 @@
 package sender
 
 import (
-	"container/list"
 	"context"
 	"log/slog"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,13 +16,18 @@ type sendFunc interface {
 	Send(context.Context, string, []*mackerel.MetricValue) error
 }
 
+type queue interface {
+	Dequeue() (hostid string, metrics []*mackerel.MetricValue, ok bool)
+	Len() int
+	ReEnqueue(string, []*mackerel.MetricValue)
+}
+
 type Sender struct {
 	wg         sync.WaitGroup
 	shutdown   chan struct{}
 	isShutdown atomic.Bool
 
-	sync.Mutex
-	buffers  *list.List
+	queue    queue
 	sendFunc sendFunc
 }
 
@@ -34,26 +37,15 @@ func (noopSendFunc) Send(_ context.Context, _ string, _ []*mackerel.MetricValue)
 	return nil
 }
 
-func New(sendFunc sendFunc) *Sender {
+func New(sendFunc sendFunc, queue queue) *Sender {
 	if sendFunc == nil {
 		sendFunc = &noopSendFunc{}
 	}
 	return &Sender{
 		shutdown: make(chan struct{}),
-		buffers:  list.New(),
+		queue:    queue,
 		sendFunc: sendFunc,
 	}
-}
-
-type Message struct {
-	hostID  string
-	metrics []*mackerel.MetricValue
-}
-
-func (q *Sender) len() int {
-	q.Lock()
-	defer q.Unlock()
-	return q.buffers.Len()
 }
 
 func (q *Sender) Serve() error {
@@ -79,38 +71,23 @@ func (q *Sender) Serve() error {
 		case <-quit:
 			return nil
 		default:
-			if q.len() == 0 {
+			hostID, metrics, ok := q.queue.Dequeue()
+			if !ok {
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}
-
-			e := q.buffers.Front()
-			value := e.Value.(Message)
 
 			// for idx := range value {
 			// 	fmt.Printf("%d\t%s\t%v\n", value[idx].Time, value[idx].Name, value[idx].Value)
 			// }
 
-			if err := q.sendFunc.Send(ctx, value.hostID, value.metrics); err != nil {
+			if err := q.sendFunc.Send(ctx, hostID, metrics); err != nil {
 				slog.WarnContext(ctx, "failed post", slog.String("error", err.Error()))
+				q.queue.ReEnqueue(hostID, metrics)
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}
-
-			q.Lock()
-			q.buffers.Remove(e)
-			q.Unlock()
 		}
-	}
-}
-
-func (q *Sender) Enqueue(hostID string, rawMetrics []*mackerel.MetricValue) {
-	q.Lock()
-	defer q.Unlock()
-	// When a large item cannot be sent, the error never goes away.
-	// Therefore, divide it into appropriate numbers.
-	for chunk := range slices.Chunk(rawMetrics, 50) {
-		q.buffers.PushBack(Message{hostID: hostID, metrics: chunk})
 	}
 }
 
@@ -137,7 +114,7 @@ loop:
 		case <-ctx.Done():
 			break loop
 		default:
-			if len := q.len(); len > 0 {
+			if len := q.queue.Len(); len > 0 {
 				slog.InfoContext(ctx, "draining...", slog.Int("remain", len))
 				time.Sleep(time.Second)
 				continue

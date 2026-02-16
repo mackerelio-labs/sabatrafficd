@@ -75,7 +75,7 @@ func trapSignals() {
 						// create
 						var workers = []serveAndShutdown{
 							worker.New(ticker.MetadataNew(newConf.Collector[idx], client), 3*time.Hour),
-							worker.New(ticker.New(newConf.Collector[idx], queueHandler), time.Minute),
+							worker.New(ticker.New(newConf.Collector[idx], sendQueue), time.Minute),
 						}
 						for idx := range workers {
 							go func() {

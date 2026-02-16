@@ -33,10 +33,17 @@ type yamlCollectorConfig struct {
 	CustomMibs   []*customMIB   `yaml:"custom-mibs,omitempty"`
 }
 
+type yamlDiskCache struct {
+	Directory string `yaml:"directory"`
+	Size      Size   `yaml:"size"`
+}
+
 type yamlConfig struct {
 	ApiKey string `yaml:"x-api-key"`
 
 	Collector []*yamlCollectorConfig `yaml:"collector"`
+
+	DiskCache *yamlDiskCache `yaml:"disk-cache"`
 }
 
 type yamlInterface struct {
@@ -93,10 +100,16 @@ func (conf *CollectorConfig) CollectorID() string {
 	return fmt.Sprintf("host=%s,port=%d,hostID=%s", conf.SNMP.Host, conf.SNMP.Port, conf.HostID)
 }
 
+type DiskCache struct {
+	Directory string
+	Size      Size
+}
+
 type Config struct {
 	ApiKey string
 
 	Collector []*CollectorConfig
+	DiskCache *DiskCache
 }
 
 func Init(filename string) (*Config, error) {
@@ -128,8 +141,18 @@ func convert(t yamlConfig) (*Config, error) {
 		cs = append(cs, conf)
 	}
 
+	var dc *DiskCache
+	if t.DiskCache != nil {
+		var err error
+		dc, err = diskcacheValidate(t.DiskCache)
+		if err != nil {
+			slog.Warn("disable disk-cache because failed parse config", slog.String("error", err.Error()))
+		}
+	}
+
 	return &Config{
 		ApiKey:    apiKey,
 		Collector: cs,
+		DiskCache: dc,
 	}, nil
 }

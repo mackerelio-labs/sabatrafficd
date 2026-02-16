@@ -14,7 +14,7 @@ import (
 
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 	"github.com/mackerelio-labs/sabatrafficd/internal/mackerel"
-	"github.com/mackerelio-labs/sabatrafficd/internal/sendqueue"
+	"github.com/mackerelio-labs/sabatrafficd/internal/sender"
 	"github.com/mackerelio-labs/sabatrafficd/internal/ticker"
 	"github.com/mackerelio-labs/sabatrafficd/internal/worker"
 )
@@ -37,8 +37,8 @@ var (
 	doShutdown   atomic.Bool
 	idleShutdown = make(chan struct{})
 
-	client       *mackerel.Mackerel
-	queueHandler *sendqueue.Queue
+	client        *mackerel.Mackerel
+	senderHandler *sender.Sender
 )
 
 func main() {
@@ -54,9 +54,9 @@ func main() {
 	}
 
 	client = mackerel.New(conf.ApiKey)
-	queueHandler = sendqueue.New(client)
+	senderHandler = sender.New(client)
 
-	srvs = append(srvs, queueHandler)
+	srvs = append(srvs, senderHandler)
 
 	for idx := range conf.Collector {
 		if len(conf.Collector[idx].CustomMIBsGraphDefs) > 0 {
@@ -67,7 +67,7 @@ func main() {
 
 		srvs = append(srvs,
 			worker.New(ticker.MetadataNew(conf.Collector[idx], client), 3*time.Hour),
-			worker.New(ticker.New(conf.Collector[idx], queueHandler), time.Minute),
+			worker.New(ticker.New(conf.Collector[idx], senderHandler), time.Minute),
 		)
 	}
 

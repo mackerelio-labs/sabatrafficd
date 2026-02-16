@@ -1,4 +1,4 @@
-package sendqueue
+package sender
 
 import (
 	"container/list"
@@ -14,18 +14,18 @@ import (
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 )
 
-type sender interface {
+type sendFunc interface {
 	Send(context.Context, string, []*mackerel.MetricValue) error
 }
 
-type Queue struct {
+type Sender struct {
 	wg         sync.WaitGroup
 	shutdown   chan struct{}
 	isShutdown atomic.Bool
 
 	sync.Mutex
 	buffers  *list.List
-	sendFunc sender
+	sendFunc sendFunc
 }
 
 type noopSendFunc struct{}
@@ -34,11 +34,11 @@ func (noopSendFunc) Send(_ context.Context, _ string, _ []*mackerel.MetricValue)
 	return nil
 }
 
-func New(sendFunc sender) *Queue {
+func New(sendFunc sendFunc) *Sender {
 	if sendFunc == nil {
 		sendFunc = &noopSendFunc{}
 	}
-	return &Queue{
+	return &Sender{
 		shutdown: make(chan struct{}),
 		buffers:  list.New(),
 		sendFunc: sendFunc,
@@ -50,13 +50,13 @@ type Message struct {
 	metrics []*mackerel.MetricValue
 }
 
-func (q *Queue) len() int {
+func (q *Sender) len() int {
 	q.Lock()
 	defer q.Unlock()
 	return q.buffers.Len()
 }
 
-func (q *Queue) Serve() error {
+func (q *Sender) Serve() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -104,7 +104,7 @@ func (q *Queue) Serve() error {
 	}
 }
 
-func (q *Queue) Enqueue(hostID string, rawMetrics []*mackerel.MetricValue) {
+func (q *Sender) Enqueue(hostID string, rawMetrics []*mackerel.MetricValue) {
 	q.Lock()
 	defer q.Unlock()
 	// When a large item cannot be sent, the error never goes away.
@@ -114,19 +114,19 @@ func (q *Queue) Enqueue(hostID string, rawMetrics []*mackerel.MetricValue) {
 	}
 }
 
-func (*Queue) Reload(conf *config.CollectorConfig) {
+func (*Sender) Reload(conf *config.CollectorConfig) {
 	// no support
 }
 
-func (*Queue) CollectorID() string {
+func (*Sender) CollectorID() string {
 	// no support
 	return ""
 }
-func (q *Queue) Alive() bool {
+func (q *Sender) Alive() bool {
 	return !q.isShutdown.Load()
 }
 
-func (q *Queue) Shutdown(ctx context.Context) error {
+func (q *Sender) Shutdown(ctx context.Context) error {
 	if !q.isShutdown.CompareAndSwap(false, true) {
 		return nil
 	}

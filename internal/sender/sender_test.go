@@ -1,4 +1,4 @@
-package sendqueue
+package sender
 
 import (
 	"context"

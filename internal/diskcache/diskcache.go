@@ -25,9 +25,15 @@ type DiskCache struct {
 	conf  *config.DiskCache
 
 	filelist *list.List
+	total    int64
 
 	fileMu    sync.Mutex
 	filequeue *list.List
+}
+
+type cacheEntry struct {
+	filename string
+	size     int64
 }
 
 type queue interface {
@@ -64,6 +70,11 @@ func (dc *DiskCache) Tick(ctx context.Context) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
+	dc.createFile()
+	dc.purge()
+}
+
+func (dc *DiskCache) createFile() {
 	// Tick 環境下の制約により、ファイル名は衝突しない
 	filename := fmt.Sprintf("%d.dat.gz", time.Now().UnixMilli())
 
@@ -98,7 +109,34 @@ func (dc *DiskCache) Tick(ctx context.Context) {
 		return
 	}
 
-	dc.filelist.PushBack(filename)
+	var size int64
+	st, err := dc.root.Stat(filename)
+	if err == nil {
+		size = st.Size()
+	}
+
+	dc.filelist.PushBack(cacheEntry{filename: filename, size: size})
+	dc.total += size
+}
+
+func (dc *DiskCache) purge() {
+	if dc.total < dc.conf.Size.Size() {
+		return
+	}
+
+	e := dc.filelist.Front()
+	if e == nil {
+		slog.Error("something wrong", slog.Int64("size", dc.total))
+		return
+	}
+	dc.filelist.Remove(e)
+	entry := e.Value.(cacheEntry)
+	if err := dc.root.Remove(entry.filename); err != nil {
+		slog.Error("failed remove diskcache", slog.String("filename", entry.filename), slog.String("error", err.Error()))
+	} else {
+		slog.Info("remove diskcache because disk size limit.", slog.String("filename", entry.filename))
+	}
+	dc.total -= entry.size
 }
 
 func (*DiskCache) Reload(conf *config.CollectorConfig) {
@@ -110,17 +148,17 @@ func (*DiskCache) CollectorID() string {
 	return ""
 }
 
-func (dc *DiskCache) filelistDequeue() (string, bool) {
+func (dc *DiskCache) filelistDequeue() (cacheEntry, bool) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	e := dc.filelist.Front()
 	if e == nil {
-		return "", false
+		return cacheEntry{}, false
 	}
 	dc.filelist.Remove(e)
 
-	return e.Value.(string), true
+	return e.Value.(cacheEntry), true
 }
 
 func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, ok bool) {
@@ -130,8 +168,8 @@ func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, 
 	// ファイルの読み込みが開始されてない。または、ファイルを読み切った場合
 	if dc.filequeue.Len() == 0 {
 		// 読み出すべきファイルがあれば、処理する
-		if filename, ok := dc.filelistDequeue(); ok {
-			fi, err := dc.root.Open(filename)
+		if entry, ok := dc.filelistDequeue(); ok {
+			fi, err := dc.root.Open(entry.filename)
 			if err != nil {
 				slog.Error("failed load diskcache", slog.String("error", err.Error()))
 				return "", nil, false
@@ -157,8 +195,10 @@ func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, 
 				slog.Error("failed load diskcache", slog.String("error", err.Error()))
 			}
 			// ファイルは削除する
-			if err = dc.root.Remove(filename); err != nil {
-				slog.Error("failed remove diskcache", slog.String("filename", filename), slog.String("error", err.Error()))
+			if err = dc.root.Remove(entry.filename); err != nil {
+				slog.Error("failed remove diskcache", slog.String("filename", entry.filename), slog.String("error", err.Error()))
+			} else {
+				dc.total -= entry.size
 			}
 		}
 	}

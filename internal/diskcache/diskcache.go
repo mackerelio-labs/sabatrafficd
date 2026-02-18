@@ -26,6 +26,7 @@ type DiskCache struct {
 
 	filelist   *list.List
 	totalBytes int64
+	totalItems int
 
 	fileMu    sync.Mutex
 	filequeue *list.List
@@ -34,6 +35,7 @@ type DiskCache struct {
 type cacheEntry struct {
 	filename string
 	bytes    int64
+	items    int
 }
 
 type queue interface {
@@ -85,7 +87,8 @@ func (dc *DiskCache) createFile() {
 
 	items := dc.queue.FrontN(limit)
 	// 詰まりが解消し、0件の取得になった場合はスキップ
-	if len(items) == 0 {
+	length := len(items)
+	if length == 0 {
 		return
 	}
 
@@ -115,8 +118,9 @@ func (dc *DiskCache) createFile() {
 		bs = st.Size()
 	}
 
-	dc.filelist.PushBack(cacheEntry{filename: filename, bytes: bs})
+	dc.filelist.PushBack(cacheEntry{filename: filename, bytes: bs, items: length})
 	dc.totalBytes += bs
+	dc.totalItems += length
 }
 
 func (dc *DiskCache) purge() {
@@ -137,6 +141,7 @@ func (dc *DiskCache) purge() {
 		slog.Info("remove diskcache because disk size limit.", slog.String("filename", entry.filename))
 	}
 	dc.totalBytes -= entry.bytes
+	dc.totalItems -= entry.items
 }
 
 func (*DiskCache) Reload(conf *config.CollectorConfig) {
@@ -199,6 +204,7 @@ func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, 
 				slog.Error("failed remove diskcache", slog.String("filename", entry.filename), slog.String("error", err.Error()))
 			} else {
 				dc.totalBytes -= entry.bytes
+				dc.totalItems -= entry.items
 			}
 		}
 	}
@@ -221,7 +227,7 @@ func (dc *DiskCache) Len() int {
 	defer dc.mu.Unlock()
 	dc.fileMu.Lock()
 	defer dc.fileMu.Unlock()
-	return dc.filelist.Len()*limit + dc.filequeue.Len()
+	return dc.totalItems + dc.filequeue.Len()
 }
 
 func (dc *DiskCache) ReEnqueue(hostID string, metrics []*mackerel.MetricValue) {

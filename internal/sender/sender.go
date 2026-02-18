@@ -31,6 +31,11 @@ type Sender struct {
 	sendFunc sendFunc
 }
 
+type item struct {
+	hostID  string
+	metrics []*mackerel.MetricValue
+}
+
 type noopSendFunc struct{}
 
 func (noopSendFunc) Send(_ context.Context, _ string, _ []*mackerel.MetricValue) error {
@@ -53,6 +58,7 @@ func (q *Sender) Serve() error {
 	defer cancel()
 
 	quit := make(chan struct{})
+	ch := make(chan *item, 10)
 
 	go func() {
 		<-q.shutdown
@@ -63,6 +69,24 @@ func (q *Sender) Serve() error {
 		slog.Debug("Serve stopped")
 	}()
 
+	for range 10 {
+		q.wg.Go(func() {
+			for {
+				select {
+				case <-quit:
+					return
+
+				case v := <-ch:
+					if err := q.sendFunc.Send(ctx, v.hostID, v.metrics); err != nil {
+						slog.WarnContext(ctx, "failed post", slog.String("error", err.Error()))
+						q.queue.ReEnqueue(v.hostID, v.metrics)
+						time.Sleep(100 * time.Millisecond)
+						continue
+					}
+				}
+			}
+		})
+	}
 
 	q.wg.Add(1)
 	defer q.wg.Done()
@@ -77,16 +101,7 @@ func (q *Sender) Serve() error {
 				continue
 			}
 
-			// for idx := range value {
-			// 	fmt.Printf("%d\t%s\t%v\n", value[idx].Time, value[idx].Name, value[idx].Value)
-			// }
-
-			if err := q.sendFunc.Send(ctx, hostID, metrics); err != nil {
-				slog.WarnContext(ctx, "failed post", slog.String("error", err.Error()))
-				q.queue.ReEnqueue(hostID, metrics)
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
+			ch <- &item{hostID: hostID, metrics: metrics}
 		}
 	}
 }

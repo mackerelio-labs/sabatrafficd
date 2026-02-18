@@ -24,8 +24,8 @@ type DiskCache struct {
 	queue queue
 	conf  *config.DiskCache
 
-	filelist *list.List
-	total    int64
+	filelist   *list.List
+	totalBytes int64
 
 	fileMu    sync.Mutex
 	filequeue *list.List
@@ -33,7 +33,7 @@ type DiskCache struct {
 
 type cacheEntry struct {
 	filename string
-	size     int64
+	bytes    int64
 }
 
 type queue interface {
@@ -109,24 +109,24 @@ func (dc *DiskCache) createFile() {
 		return
 	}
 
-	var size int64
+	var bs int64
 	st, err := dc.root.Stat(filename)
 	if err == nil {
-		size = st.Size()
+		bs = st.Size()
 	}
 
-	dc.filelist.PushBack(cacheEntry{filename: filename, size: size})
-	dc.total += size
+	dc.filelist.PushBack(cacheEntry{filename: filename, bytes: bs})
+	dc.totalBytes += bs
 }
 
 func (dc *DiskCache) purge() {
-	if dc.total < dc.conf.Size.Size() {
+	if dc.totalBytes < dc.conf.Size.Size() {
 		return
 	}
 
 	e := dc.filelist.Front()
 	if e == nil {
-		slog.Error("something wrong", slog.Int64("size", dc.total))
+		slog.Error("something wrong", slog.Int64("size", dc.totalBytes))
 		return
 	}
 	dc.filelist.Remove(e)
@@ -136,7 +136,7 @@ func (dc *DiskCache) purge() {
 	} else {
 		slog.Info("remove diskcache because disk size limit.", slog.String("filename", entry.filename))
 	}
-	dc.total -= entry.size
+	dc.totalBytes -= entry.bytes
 }
 
 func (*DiskCache) Reload(conf *config.CollectorConfig) {
@@ -198,7 +198,7 @@ func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, 
 			if err = dc.root.Remove(entry.filename); err != nil {
 				slog.Error("failed remove diskcache", slog.String("filename", entry.filename), slog.String("error", err.Error()))
 			} else {
-				dc.total -= entry.size
+				dc.totalBytes -= entry.bytes
 			}
 		}
 	}

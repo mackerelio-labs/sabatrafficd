@@ -1,9 +1,14 @@
 x-api-key: xxxxx
+# disk-cache: # save to disk on fail
+#   directory: cache
+#   size: 10MB
 collector:
 - host-id: xxxxx
 # hostname: "switch" # display Name on Mackerel
   community: public # the community string for device
   host: 192.2.0.1 # ip address
+# timeout: 10s
+# retry: 3
 # version: v2c # v2c or v3
 # interface:
 #   include: ^(eth|wlan) # include interface name

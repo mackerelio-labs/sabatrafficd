@@ -59,6 +59,7 @@ func Connect(ctx context.Context, param config.CollectorSNMPConfig, handler Hand
 
 	handler.SetContext(ctx)
 	if err := handler.Connect(); err != nil {
+		unlock(lockName)
 		return nil, err
 	}
 

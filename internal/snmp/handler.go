@@ -7,14 +7,6 @@ import (
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 )
 
-type Handler interface {
-	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
-	BulkWalk(rootOid string, walkFn gosnmp.WalkFunc) error
-
-	Connect() error
-	Close() error
-}
-
 type snmpHandler struct {
 	gosnmp.GoSNMP
 }

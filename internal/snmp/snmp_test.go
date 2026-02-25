@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -36,6 +37,9 @@ func (m *mockHandler) Connect() error {
 
 func (m *mockHandler) Close() error {
 	return nil
+}
+
+func (m *mockHandler) SetContext(context.Context) {
 }
 
 func TestGetInterfaceNumber(t *testing.T) {

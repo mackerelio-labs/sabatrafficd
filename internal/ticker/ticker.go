@@ -53,7 +53,12 @@ func New(conf *config.CollectorConfig, q enqueuer) *Ticker {
 }
 
 func (t *Ticker) Tick(ctx context.Context) {
-	t.do(ctx, time.Now())
+	now := time.Now()
+
+	ctx, stop := context.WithDeadline(ctx, now.Add(time.Minute))
+	defer stop()
+
+	t.do(ctx, now)
 	t.doCustomMIBs(ctx)
 }
 

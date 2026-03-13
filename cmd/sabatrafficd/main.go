@@ -13,7 +13,9 @@ import (
 	"github.com/coreos/go-systemd/v22/daemon"
 
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
+	"github.com/mackerelio-labs/sabatrafficd/internal/diskcache"
 	"github.com/mackerelio-labs/sabatrafficd/internal/mackerel"
+	"github.com/mackerelio-labs/sabatrafficd/internal/sender"
 	"github.com/mackerelio-labs/sabatrafficd/internal/sendqueue"
 	"github.com/mackerelio-labs/sabatrafficd/internal/ticker"
 	"github.com/mackerelio-labs/sabatrafficd/internal/worker"
@@ -37,8 +39,10 @@ var (
 	doShutdown   atomic.Bool
 	idleShutdown = make(chan struct{})
 
-	client       *mackerel.Mackerel
-	queueHandler *sendqueue.Queue
+	client        *mackerel.Mackerel
+	sendQueue     *sendqueue.Queue
+	senderHandler *sender.Sender
+	dc            *diskcache.DiskCache
 )
 
 func main() {
@@ -56,9 +60,18 @@ func main() {
 	slog.Info("initialize...")
 
 	client = mackerel.New(conf.ApiKey)
-	queueHandler = sendqueue.New(client)
+	sendQueue = sendqueue.New()
+	senderHandler = sender.New(client, sendQueue)
 
-	srvs = append(srvs, queueHandler)
+	srvs = append(srvs, senderHandler)
+
+	dc, err = diskcache.New(sendQueue, conf.DiskCache)
+	if err != nil {
+		slog.Warn("failed init diskcache", slog.String("error", err.Error()))
+	} else {
+		srvs = append(srvs, worker.New(dc, time.Second), sender.New(client, dc))
+		defer dc.Close() // nolint
+	}
 
 	for idx := range conf.Collector {
 		if len(conf.Collector[idx].CustomMIBsGraphDefs) > 0 {
@@ -69,7 +82,7 @@ func main() {
 
 		srvs = append(srvs,
 			worker.New(ticker.MetadataNew(conf.Collector[idx], client), 3*time.Hour),
-			worker.New(ticker.New(conf.Collector[idx], queueHandler), time.Minute),
+			worker.New(ticker.New(conf.Collector[idx], sendQueue), time.Minute),
 		)
 	}
 

@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/coreos/go-systemd/v22 v22.7.0
+	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/gosnmp/gosnmp v1.43.2
 	github.com/mackerelio/mackerel-client-go v0.40.0

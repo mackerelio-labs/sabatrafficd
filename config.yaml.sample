@@ -1,4 +1,7 @@
 x-api-key: xxxxx
+# disk-cache: # save to disk on fail
+#   directory: cache
+#   size: 10MB
 collector:
 - host-id: xxxxx
 # hostname: "switch" # display Name on Mackerel

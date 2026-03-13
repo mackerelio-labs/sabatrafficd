@@ -3,7 +3,6 @@ package snmp
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/gosnmp/gosnmp"
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
@@ -22,9 +21,7 @@ type snmpHandler struct {
 }
 
 func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler, error) {
-	timeout := time.Duration(10) * time.Second
 	transport := "udp"
-	retries := 3
 
 	if param.V2c != nil {
 		return &snmpHandler{
@@ -33,8 +30,8 @@ func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler,
 				Target:             param.Host,
 				Port:               param.Port,
 				Transport:          transport,
-				Timeout:            timeout,
-				Retries:            retries,
+				Timeout:            param.Timeout,
+				Retries:            param.Retry,
 				ExponentialTimeout: true,
 				MaxOids:            gosnmp.MaxOids,
 
@@ -49,8 +46,8 @@ func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler,
 				Target:             param.Host,
 				Port:               param.Port,
 				Transport:          transport,
-				Timeout:            timeout,
-				Retries:            retries,
+				Timeout:            param.Timeout,
+				Retries:            param.Retry,
 				ExponentialTimeout: true,
 				MaxOids:            gosnmp.MaxOids,
 

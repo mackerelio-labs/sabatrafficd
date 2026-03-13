@@ -54,17 +54,12 @@ func New(sendFunc sendFunc, queue queue) *Sender {
 }
 
 func (q *Sender) Serve() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	quit := make(chan struct{})
 	ch := make(chan *item, 10)
 
 	go func() {
 		<-q.shutdown
 		defer close(quit)
-
-		cancel()
 
 		slog.Debug("Serve stopped")
 	}()
@@ -77,8 +72,10 @@ func (q *Sender) Serve() error {
 					return
 
 				case v := <-ch:
-					if err := q.sendFunc.Send(ctx, v.hostID, v.metrics); err != nil {
-						slog.WarnContext(ctx, "failed post", slog.String("error", err.Error()))
+					// shutdown 処理で context を cancel() すると、 Dequeue しただけで送信されずに
+					// 捨てられてしまうおそれがある。送信が完全に終わってから、 Serve() の処理を終了させる
+					if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
+						slog.Warn("failed post", slog.String("error", err.Error()))
 						q.queue.ReEnqueue(v.hostID, v.metrics)
 						time.Sleep(100 * time.Millisecond)
 						continue

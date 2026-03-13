@@ -34,6 +34,8 @@ type Item struct {
 func (q *Queue) Enqueue(hostID string, rawMetrics []*mackerel.MetricValue) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	// When a large item cannot be sent, the error never goes away.
+	// Therefore, divide it into appropriate numbers.
 	for chunk := range slices.Chunk(rawMetrics, 50) {
 		q.buffers.PushBack(Item{HostID: hostID, Metrics: chunk})
 	}

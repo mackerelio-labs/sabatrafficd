@@ -2,31 +2,21 @@ package snmp
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gosnmp/gosnmp"
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
 )
 
-type Handler interface {
-	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
-	BulkWalk(rootOid string, walkFn gosnmp.WalkFunc) error
-
-	Connect() error
-	Close() error
-}
-
 type snmpHandler struct {
 	gosnmp.GoSNMP
 }
 
-func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler, error) {
+func NewHandler(param config.CollectorSNMPConfig) *snmpHandler {
 	transport := "udp"
 
 	if param.V2c != nil {
 		return &snmpHandler{
 			gosnmp.GoSNMP{
-				Context:            ctx,
 				Target:             param.Host,
 				Port:               param.Port,
 				Transport:          transport,
@@ -38,11 +28,10 @@ func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler,
 				Version:   gosnmp.Version2c,
 				Community: param.V2c.Community,
 			},
-		}, nil
+		}
 	} else if param.V3 != nil {
 		return &snmpHandler{
 			gosnmp.GoSNMP{
-				Context:            ctx,
 				Target:             param.Host,
 				Port:               param.Port,
 				Transport:          transport,
@@ -56,12 +45,16 @@ func NewHandler(ctx context.Context, param config.CollectorSNMPConfig) (Handler,
 				MsgFlags:           param.V3.MsgFlags(),
 				SecurityParameters: param.V3.SecurityParameters(),
 			},
-		}, nil
+		}
 	}
 
-	return nil, fmt.Errorf("invalid params")
+	panic("unreachable")
 }
 
 func (x *snmpHandler) Close() error {
 	return x.Conn.Close()
+}
+
+func (x *snmpHandler) SetContext(ctx context.Context) {
+	x.Context = ctx
 }

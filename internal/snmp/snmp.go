@@ -39,26 +39,32 @@ func unlock(conn string) {
 	lock.Unlock()
 }
 
+type Handler interface {
+	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
+	BulkWalk(rootOid string, walkFn gosnmp.WalkFunc) error
+
+	SetContext(context.Context)
+	Connect() error
+	Close() error
+}
+
 type SNMP struct {
 	handler  Handler
 	lockName string
 }
 
-func Connect(ctx context.Context, param config.CollectorSNMPConfig) (*SNMP, error) {
+func Connect(ctx context.Context, param config.CollectorSNMPConfig, handler Handler) (*SNMP, error) {
 	lockName := net.JoinHostPort(param.Host, fmt.Sprint(param.Port))
 	lock(lockName)
 
-	g, err := NewHandler(ctx, param)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := g.Connect(); err != nil {
+	handler.SetContext(ctx)
+	if err := handler.Connect(); err != nil {
+		unlock(lockName)
 		return nil, err
 	}
 
 	return &SNMP{
-		handler:  g,
+		handler:  handler,
 		lockName: lockName,
 	}, nil
 }

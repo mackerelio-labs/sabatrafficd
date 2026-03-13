@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/mackerelio-labs/sabatrafficd/internal/collector"
 	"github.com/mackerelio-labs/sabatrafficd/internal/config"
@@ -35,6 +36,9 @@ func MetadataNew(conf *config.CollectorConfig, m updateHost) *MetadataTicker {
 }
 
 func (t *MetadataTicker) Tick(ctx context.Context) {
+	ctx, stop := context.WithTimeout(ctx, time.Minute)
+	defer stop()
+
 	interfaces, err := collector.New(t.conf).DoInterfaceIPAddress(ctx)
 	if err != nil {
 		slog.WarnContext(ctx, "failed getting interfaces", slog.String("error", err.Error()))

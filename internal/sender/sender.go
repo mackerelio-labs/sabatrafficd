@@ -60,8 +60,6 @@ func (q *Sender) Serve() error {
 	for range 10 {
 		wg.Go(func() {
 			for v := range ch {
-				// shutdown 処理で context を cancel() すると、 Dequeue しただけで送信されずに
-				// 捨てられてしまうおそれがある。送信が完全に終わってから、 Serve() の処理を終了させる
 				if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
 					slog.Warn("failed post", slog.String("error", err.Error()))
 					q.queue.ReEnqueue(v.hostID, v.metrics)

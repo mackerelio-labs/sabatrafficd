@@ -23,7 +23,6 @@ type queue interface {
 }
 
 type Sender struct {
-	wg         sync.WaitGroup
 	shutdown   chan struct{}
 	isShutdown atomic.Bool
 
@@ -54,42 +53,32 @@ func New(sendFunc sendFunc, queue queue) *Sender {
 }
 
 func (q *Sender) Serve() error {
-	quit := make(chan struct{})
-	ch := make(chan *item, 10)
-
-	go func() {
-		<-q.shutdown
-		defer close(quit)
-
-		slog.Debug("Serve stopped")
-	}()
+	var wg sync.WaitGroup
+	ch := make(chan *item, 100)
 
 	for range 10 {
-		q.wg.Go(func() {
-			for {
-				select {
-				case <-quit:
-					return
-
-				case v := <-ch:
-					// shutdown 処理で context を cancel() すると、 Dequeue しただけで送信されずに
-					// 捨てられてしまうおそれがある。送信が完全に終わってから、 Serve() の処理を終了させる
-					if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
-						slog.Warn("failed post", slog.String("error", err.Error()))
-						q.queue.ReEnqueue(v.hostID, v.metrics)
-						time.Sleep(100 * time.Millisecond)
-						continue
-					}
+		wg.Go(func() {
+			for v := range ch {
+				// shutdown 処理で context を cancel() すると、 Dequeue しただけで送信されずに
+				// 捨てられてしまうおそれがある。送信が完全に終わってから、 Serve() の処理を終了させる
+				if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
+					slog.Warn("failed post", slog.String("error", err.Error()))
+					q.queue.ReEnqueue(v.hostID, v.metrics)
+					time.Sleep(100 * time.Millisecond)
 				}
 			}
 		})
 	}
 
-	q.wg.Add(1)
-	defer q.wg.Done()
 	for {
 		select {
-		case <-quit:
+		case <-q.shutdown:
+			slog.Debug("Serve stopped")
+			// close(p.shutdown) が実行されている時点で、残存キューはないとされている
+			close(ch)
+
+			// ch の残存ジョブが全て捌けるまで待つ
+			wg.Wait()
 			return nil
 		default:
 			hostID, metrics, ok := q.queue.Dequeue()
@@ -136,6 +125,5 @@ loop:
 	}
 
 	close(q.shutdown)
-	q.wg.Wait()
 	return nil
 }

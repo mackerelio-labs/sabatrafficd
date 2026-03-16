@@ -61,14 +61,18 @@ func TestServe(t *testing.T) {
 	m := &mockQueue{count: 30}
 	s := &mockSender{}
 	h := New(s, m)
-	go h.Serve() // nolint
 
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		if err := h.Shutdown(t.Context()); err != nil {
+		if err := h.Serve(); err != nil {
 			t.Error(err)
 		}
 	})
+
+	if err := h.Shutdown(t.Context()); err != nil {
+		t.Error(err)
+	}
+
 	wg.Wait()
 
 	if s.count != 30 {

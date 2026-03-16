@@ -23,8 +23,9 @@ type queue interface {
 }
 
 type Sender struct {
-	shutdown   chan struct{}
-	isShutdown atomic.Bool
+	shutdown    chan struct{}
+	isShutdown  atomic.Bool
+	serveClosed atomic.Bool
 
 	queue    queue
 	sendFunc sendFunc
@@ -79,6 +80,7 @@ func (q *Sender) Serve() error {
 
 			// ch の残存ジョブが全て捌けるまで待つ
 			wg.Wait()
+			q.serveClosed.Store(true)
 			return nil
 		default:
 			hostID, metrics, ok := q.queue.Dequeue()
@@ -125,5 +127,15 @@ loop:
 	}
 
 	close(q.shutdown)
-	return nil
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if q.serveClosed.Load() {
+				return nil
+			}
+		}
+	}
 }

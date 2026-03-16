@@ -72,13 +72,14 @@ func (q *Sender) Serve() error {
 	for {
 		select {
 		case <-q.shutdown:
-			slog.Debug("Serve stopped")
+			slog.Debug("Serve stopping...")
 			// close(p.shutdown) が実行されている時点で、残存キューはないとされている
 			close(ch)
 
 			// ch の残存ジョブが全て捌けるまで待つ
 			wg.Wait()
 			q.serveClosed.Store(true)
+			slog.Debug("Serve stopped")
 			return nil
 		default:
 			hostID, metrics, ok := q.queue.Dequeue()

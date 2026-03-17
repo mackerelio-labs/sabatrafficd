@@ -23,12 +23,17 @@ type queue interface {
 }
 
 type Sender struct {
-	wg         sync.WaitGroup
-	shutdown   chan struct{}
-	isShutdown atomic.Bool
+	shutdown    chan struct{}
+	isShutdown  atomic.Bool
+	serveClosed atomic.Bool
 
 	queue    queue
 	sendFunc sendFunc
+}
+
+type item struct {
+	hostID  string
+	metrics []*mackerel.MetricValue
 }
 
 type noopSendFunc struct{}
@@ -49,26 +54,32 @@ func New(sendFunc sendFunc, queue queue) *Sender {
 }
 
 func (q *Sender) Serve() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	var wg sync.WaitGroup
+	ch := make(chan *item, 100)
 
-	quit := make(chan struct{})
+	for range 10 {
+		wg.Go(func() {
+			for v := range ch {
+				if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
+					slog.Warn("failed post", slog.String("error", err.Error()))
+					q.queue.ReEnqueue(v.hostID, v.metrics)
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+		})
+	}
 
-	go func() {
-		<-q.shutdown
-		defer close(quit)
-
-		cancel()
-
-		slog.Debug("Serve stopped")
-	}()
-
-
-	q.wg.Add(1)
-	defer q.wg.Done()
 	for {
 		select {
-		case <-quit:
+		case <-q.shutdown:
+			slog.Debug("Serve stopping...")
+			// close(q.shutdown) が実行されている時点で、残存キューはないとされている
+			close(ch)
+
+			// ch の残存ジョブが全て捌けるまで待つ
+			wg.Wait()
+			q.serveClosed.Store(true)
+			slog.Debug("Serve stopped")
 			return nil
 		default:
 			hostID, metrics, ok := q.queue.Dequeue()
@@ -77,16 +88,7 @@ func (q *Sender) Serve() error {
 				continue
 			}
 
-			// for idx := range value {
-			// 	fmt.Printf("%d\t%s\t%v\n", value[idx].Time, value[idx].Name, value[idx].Value)
-			// }
-
-			if err := q.sendFunc.Send(ctx, hostID, metrics); err != nil {
-				slog.WarnContext(ctx, "failed post", slog.String("error", err.Error()))
-				q.queue.ReEnqueue(hostID, metrics)
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
+			ch <- &item{hostID: hostID, metrics: metrics}
 		}
 	}
 }
@@ -124,6 +126,15 @@ loop:
 	}
 
 	close(q.shutdown)
-	q.wg.Wait()
-	return nil
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if q.serveClosed.Load() {
+				return nil
+			}
+		}
+	}
 }

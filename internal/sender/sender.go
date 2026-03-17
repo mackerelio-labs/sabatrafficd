@@ -73,7 +73,7 @@ func (q *Sender) Serve() error {
 		select {
 		case <-q.shutdown:
 			slog.Debug("Serve stopping...")
-			// close(p.shutdown) が実行されている時点で、残存キューはないとされている
+			// close(q.shutdown) が実行されている時点で、残存キューはないとされている
 			close(ch)
 
 			// ch の残存ジョブが全て捌けるまで待つ

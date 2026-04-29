@@ -203,8 +203,10 @@ func (dc *DiskCache) Dequeue() (hostid string, metrics []*mackerel.MetricValue, 
 			if err = dc.root.Remove(entry.filename); err != nil {
 				slog.Error("failed remove diskcache", slog.String("filename", entry.filename), slog.String("error", err.Error()))
 			} else {
+				dc.mu.Lock()
 				dc.totalBytes -= entry.bytes
 				dc.totalItems -= entry.items
+				dc.mu.Unlock()
 			}
 		}
 	}

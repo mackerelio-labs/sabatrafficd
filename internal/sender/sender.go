@@ -59,11 +59,15 @@ func (q *Sender) Serve() error {
 
 	for range 10 {
 		wg.Go(func() {
+			backoff := 100 * time.Millisecond
 			for v := range ch {
 				if err := q.sendFunc.Send(context.Background(), v.hostID, v.metrics); err != nil {
 					slog.Warn("failed post", slog.String("error", err.Error()))
 					q.queue.ReEnqueue(v.hostID, v.metrics)
-					time.Sleep(100 * time.Millisecond)
+					time.Sleep(backoff)
+					backoff = min(backoff*2, 30*time.Second)
+				} else {
+					backoff = 100 * time.Millisecond
 				}
 			}
 		})

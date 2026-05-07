@@ -4,9 +4,10 @@ Documentation=https://github.com/mackerelio-labs/sabatrafficd
 After=network.target
 
 [Service]
-Type=notify-reload
+Type=notify
 TimeoutStopSec=90
 ExecStart=/usr/bin/sabatrafficd -config /etc/sabatrafficd/sabatrafficd.yaml
+ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target

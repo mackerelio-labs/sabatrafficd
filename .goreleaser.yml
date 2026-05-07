@@ -26,14 +26,18 @@ nfpms:
     license: ASL 2.0
     maintainer: Hatena <mackerel-developers@hatena.ne.jp>
     overrides:
-      # https://github.com/systemd/systemd/releases/tag/v253
-      # > A new service type Type=notify-reload is defined.
+      # We are currently using Type=notify to support older distros,
+      # but we intend to switch to Type=notify-reload later,
+      # making v253 the minimum required version.
+      #   https://github.com/systemd/systemd/releases/tag/v253
+      #   > A new service type Type=notify-reload is defined.
+      # However, there is no specific timeline for this transition yet.
       deb:
         dependencies:
-          - libsystemd0 (>= 253)
+          - libsystemd0 (>= 247)
       rpm:
         dependencies:
-          - systemd-libs >= 253
+          - systemd-libs >= 247
     formats:
       - rpm
       - deb

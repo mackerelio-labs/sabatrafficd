@@ -13,21 +13,28 @@
 
 1. config.yaml.sample を config.yaml という名前でコピーします
 2. config.yaml を開き加工します
-3. `sabatrafficd -config config.yaml` で起動する
+3. `sabatrafficd -config config.yaml` で起動します
 
 ## 設定ファイルの内容
 
 ```yaml
 x-api-key: xxxxx # (必須) Mackerel の APIキー
+# disk-cache: # 通信が長時間途絶えた場合にファイルに未送信データを書き出します
+#   directory: cache
+#   size: 10MB
 collector:
-- host-id: xxxxx # (必須) Mackerel でのホストID
+- host-id: xxxxx # (必須) Mackerel でのホストID (custom-identifier と排他)
+  # custom-identifier: switch-001 # (オプション) host-id の代わりに利用できます
   hostname: "" # (オプション)Mackerel に登録するホスト名
-  community: public # (必須)取得する対象のスイッチなどの SNMP コミュニティ名を設定する
-  host: 192.2.0.1 # (必須)取得する対象のスイッチなどのIPアドレスを設定する
-  port: 161 # (オプション)取得する対象のスイッチなどのポートを設定する
-  interface: # (オプション)取り込むインターフェイスをインターフェイス名を使って絞り込むことができます。includeとexcludeはそれぞれ排他です。
-    include: "" # 取得時に取り込みたいインターフェイス名を正規表現で指定します
-    exclude: "" # 取得時に取り込みたくないインターフェイス名を正規表現で指定します
+  community: public # (必須)取得する対象のスイッチなどの SNMP コミュニティ名を設定します
+  host: 192.2.0.1 # (必須)取得する対象のスイッチなどのIPアドレスを設定します
+  # port: 161 # (オプション)取得する対象のスイッチなどのポートを設定します
+  # timeout: 10s # (オプション)取得のタイムアウト時間を設定します
+  # retry: 3 # (オプション)取得失敗時のリトライ回数を設定します
+  # version: v2c # (オプション)SNMP バージョンを設定します (v2c または v3)
+  # interface: # (オプション)取り込むインターフェイスをインターフェイス名を使って絞り込むことができます。includeとexcludeはそれぞれ排他です。
+    # include: "" # 取得時に取り込みたいインターフェイス名を正規表現で指定します
+    # exclude: "" # 取得時に取り込みたくないインターフェイス名を正規表現で指定します
   mibs: # (オプション)取り込みたい情報を設定できます。無指定時は、以下に示されるMIBについての情報が取り込まれます
     - ifHCInOctets
     - ifHCOutOctets
@@ -39,6 +46,16 @@ collector:
 #   - ifInOctets
 #   - ifOutOctets
   skip-linkdown: false # (オプション) downしているインターフェイスについては取り込みをスキップするオプションです
+# SNMPv3を利用する場合には認証などの設定が必要です
+# snmpv3:
+#   security: auth # auth, priv, noauth
+#   username: ....
+#   auth-protocol: noauth # noauth, md5, sha, sha224, sha256, sha384, sha512
+#   auth-password: ....
+#   priv-protocol: nopriv # nopriv, des, aes, aes192, aes256
+#   priv-password: ....
+# custom-mibs はインターフェイス統計以外の単発OIDを追加で収集するための設定です
+# mib は数値OID形式で指定してください (例: 1.3.6.1.2.1.1.3.0)
   custom-mibs:
 #   - display-name: uptime
 #     unit: integer
@@ -47,6 +64,4 @@ collector:
 #         mib: 1.3.6.1.2.1.1.3.0
 ```
 
-- SNMP バージョンは SNMPv2c 固定です。
-- `host-id` は、[API](https://mackerel.io/ja/api-docs/)または、[mkr](https://github.com/mackerelio/mkr)で作成してください
-
+- `host-id` および `custom-identifier` は、[API](https://mackerel.io/ja/api-docs/)または、[mkr](https://github.com/mackerelio/mkr)で作成してください

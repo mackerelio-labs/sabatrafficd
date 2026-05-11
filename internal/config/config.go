@@ -13,8 +13,9 @@ import (
 )
 
 type yamlCollectorConfig struct {
-	HostID   string `yaml:"host-id"`
-	HostName string `yaml:"hostname,omitempty"`
+	HostID           string `yaml:"host-id"`
+	CustomIdentifier string `yaml:"custom-identifier,omitempty"`
+	HostName         string `yaml:"hostname,omitempty"`
 
 	// for snmp/conn
 	Community string `yaml:"community"`
@@ -78,8 +79,9 @@ type CollectorSNMPConfig struct {
 }
 
 type CollectorConfig struct {
-	HostID   string
-	HostName string
+	HostID           string
+	CustomIdentifier string
+	HostName         string
 
 	// for snmp/conn
 	SNMP CollectorSNMPConfig

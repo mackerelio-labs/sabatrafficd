@@ -60,6 +60,7 @@ func main() {
 	slog.Info("initialize...")
 
 	client = mackerel.New(conf.ApiKey)
+	conf.Collector = resolveCollectorHostIDs(ctx, conf.Collector, client)
 	sendQueue = sendqueue.New()
 	senderHandler = sender.New(client, sendQueue)
 

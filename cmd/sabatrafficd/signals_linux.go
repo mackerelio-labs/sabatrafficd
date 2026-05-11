@@ -48,6 +48,7 @@ func trapSignals() {
 					sdNotifyHelper(daemon.SdNotifyReady)
 					continue
 				}
+				newConf.Collector = resolveCollectorHostIDs(context.Background(), newConf.Collector, client)
 
 				var (
 					oldCollectorID []string

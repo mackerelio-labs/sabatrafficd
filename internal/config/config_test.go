@@ -177,6 +177,50 @@ func Test_convert(t *testing.T) {
 				ApiKey: "cat",
 				Collector: []*yamlCollectorConfig{
 					{
+						CustomIdentifier: "switch-001",
+						Community:        "public",
+						Host:             "192.0.2.1",
+					},
+				},
+			},
+			expected: &Config{
+				ApiKey: "cat",
+				Collector: []*CollectorConfig{
+					{
+						CustomIdentifier: "switch-001",
+						SNMP: CollectorSNMPConfig{
+							Host:    "192.0.2.1",
+							Port:    161,
+							Timeout: 10 * time.Second,
+							Retry:   3,
+							V2c: &collectorSNMPConfigV2c{
+								Community: "public",
+							},
+						},
+						MIBs:                          []string{"ifHCInOctets", "ifHCOutOctets", "ifInDiscards", "ifOutDiscards", "ifInErrors", "ifOutErrors"},
+						CustomMIBmetricNameMappedMIBs: map[string]string{},
+					},
+				},
+			},
+		},
+		{
+			source: yamlConfig{
+				Collector: []*yamlCollectorConfig{
+					{
+						HostID:           "panda",
+						CustomIdentifier: "switch-001",
+						Community:        "public",
+						Host:             "192.0.2.1",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			source: yamlConfig{
+				ApiKey: "cat",
+				Collector: []*yamlCollectorConfig{
+					{
 						HostID:  "panda",
 						Version: "v2c",
 

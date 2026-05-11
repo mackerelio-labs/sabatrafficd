@@ -33,8 +33,11 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 	if t.Host == "" {
 		return nil, fmt.Errorf("host is needed")
 	}
-	if t.HostID == "" {
-		return nil, fmt.Errorf("host-id is needed")
+	if t.HostID == "" && t.CustomIdentifier == "" {
+		return nil, fmt.Errorf("host-id or custom-identifier is needed")
+	}
+	if t.HostID != "" && t.CustomIdentifier != "" {
+		return nil, fmt.Errorf("host-id, custom-identifier is exclusive")
 	}
 
 	timeout, err := time.ParseDuration(cmp.Or(t.Timeout, "10s"))
@@ -85,8 +88,9 @@ func convertCollector(t *yamlCollectorConfig) (*CollectorConfig, error) {
 	}
 
 	c := &CollectorConfig{
-		HostID:   t.HostID,
-		HostName: t.HostName,
+		HostID:           t.HostID,
+		CustomIdentifier: t.CustomIdentifier,
+		HostName:         t.HostName,
 
 		SNMP: snmpConfig,
 

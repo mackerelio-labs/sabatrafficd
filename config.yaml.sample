@@ -4,6 +4,7 @@ x-api-key: xxxxx
 #   size: 10MB
 collector:
 - host-id: xxxxx
+# custom-identifier: switch-001 # can be used instead of host-id
 # hostname: "switch" # display Name on Mackerel
   community: public # the community string for device
   host: 192.2.0.1 # ip address

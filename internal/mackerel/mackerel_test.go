@@ -1,6 +1,7 @@
 package mackerel
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -19,6 +20,7 @@ type mackerelClientMock struct {
 	returnHostID        string
 	returnError         error
 	returnErrorGraphDef error
+	returnHost          *mackerel.Host
 }
 
 func (m *mackerelClientMock) UpdateHost(hostID string, param *mackerel.UpdateHostParam) (string, error) {
@@ -33,6 +35,10 @@ func (m *mackerelClientMock) PostHostMetricValuesByHostID(hostID string, metricV
 	m.hostID = hostID
 	m.metricValues = metricValues
 	return m.returnError
+}
+
+func (m *mackerelClientMock) FindHostByCustomIdentifierContext(_ context.Context, _ string, _ *mackerel.FindHostByCustomIdentifierParam) (*mackerel.Host, error) {
+	return m.returnHost, m.returnError
 }
 
 func TestInit(t *testing.T) {
@@ -151,4 +157,25 @@ func TestSend(t *testing.T) {
 		t.Error("invalid need hostID")
 	}
 
+}
+
+func TestFindHostByCustomIdentifierContext(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		mc := &Mackerel{client: &mackerelClientMock{returnHost: &mackerel.Host{ID: "host123"}}}
+		actual, err := mc.FindHostByCustomIdentifierContext(t.Context(), "cid")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if actual != "host123" {
+			t.Fatalf("invalid host id: %s", actual)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mc := &Mackerel{client: &mackerelClientMock{}}
+		_, err := mc.FindHostByCustomIdentifierContext(t.Context(), "cid")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+	})
 }

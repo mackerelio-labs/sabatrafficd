@@ -3,6 +3,7 @@ package mackerel
 import (
 	"cmp"
 	"context"
+	"errors"
 	"os"
 
 	mackerel "github.com/mackerelio/mackerel-client-go"
@@ -14,6 +15,7 @@ type mackerelClient interface {
 	UpdateHost(hostID string, param *mackerel.UpdateHostParam) (string, error)
 	CreateGraphDefs(payloads []*mackerel.GraphDefsParam) error
 	PostHostMetricValuesByHostID(hostID string, metricValues []*mackerel.MetricValue) error
+	FindHostByCustomIdentifierContext(ctx context.Context, customIdentifier string, param *mackerel.FindHostByCustomIdentifierParam) (*mackerel.Host, error)
 }
 
 type Mackerel struct {
@@ -66,4 +68,17 @@ func (m *Mackerel) CreateGraphDefs(ctx context.Context, d []*mackerel.GraphDefsP
 
 func (m *Mackerel) Send(ctx context.Context, hostID string, value []*mackerel.MetricValue) error {
 	return m.client.PostHostMetricValuesByHostID(hostID, value)
+}
+
+func (m *Mackerel) FindHostByCustomIdentifierContext(ctx context.Context, customIdentifier string) (string, error) {
+	host, err := m.client.FindHostByCustomIdentifierContext(ctx, customIdentifier, &mackerel.FindHostByCustomIdentifierParam{
+		CaseInsensitive: false,
+	})
+	if err != nil {
+		return "", err
+	}
+	if host == nil {
+		return "", errors.New("host not found")
+	}
+	return host.ID, nil
 }

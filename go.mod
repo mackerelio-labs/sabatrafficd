@@ -8,6 +8,6 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/gosnmp/gosnmp v1.45.0
 	github.com/mackerelio/mackerel-client-go v0.47.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
 )

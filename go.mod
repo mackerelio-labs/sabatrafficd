@@ -1,13 +1,13 @@
 module github.com/mackerelio-labs/sabatrafficd
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/gosnmp/gosnmp v1.45.0
-	github.com/mackerelio/mackerel-client-go v0.47.0
+	github.com/mackerelio/mackerel-client-go v0.48.0
 	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
 )
